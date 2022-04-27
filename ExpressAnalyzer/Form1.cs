@@ -5,8 +5,9 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using ExpressAnalyzer_2;
 
-namespace ExpressAnalyzer
+namespace TestExpressAnalyzer
 {
     public partial class Form1 : Form
     {

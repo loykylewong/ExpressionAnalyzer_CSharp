@@ -1,4 +1,4 @@
-namespace ExpressAnalyzer
+namespace TestExpressAnalyzer
 {
     partial class Form1
     {
