@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using ExpressAnalyzer_2;
+using ExpressionAnalyzer;
 
 namespace TestExpressAnalyzer
 {
@@ -51,7 +51,7 @@ c=1.2";
 
         private void txtExpr_Leave(object sender, EventArgs e)
         {
-            this.EA.Express = this.txtExpr.Text;
+            this.EA.Expression = this.txtExpr.Text;
         }
     }
 }

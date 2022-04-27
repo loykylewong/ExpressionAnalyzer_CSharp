@@ -3,98 +3,54 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace ExpressionAnalyzer
+namespace ExpressionAnalyzer_old
 {
-    using T = Double;   // Generic <T> does not support operators, or constraint such as "where T : IArithmatcOperators"
-    public class MonDictionary<TKey, TValue>
-    {
-        private Dictionary<TKey, TValue> dict;
-        public struct EventArg
-        {
-            public TKey Key; public TValue Value;
-            public EventArg(TKey k, TValue v) { this.Key = k; this.Value = v; }
-        }
-        public delegate void EventHandler(object sender, EventArg e);
-        public event EventHandler KeyValuePairAdded;
-        public event EventHandler KeyValuePairRemoved;
-        public event EventHandler ContentsCleared;
-        public event EventHandler ValueChanged;
-        public MonDictionary() { dict = new Dictionary<TKey, TValue>(); }
-        public MonDictionary(int capacity) { dict = new Dictionary<TKey, TValue>(capacity); }
-        public MonDictionary(Dictionary<TKey, TValue> dict) { this.dict = dict; }
-        public void Add(TKey key, TValue value)
-        {
-            dict.Add(key, value);
-            KeyValuePairAdded?.Invoke(this, new EventArg(key, value));
-        }
-        public bool Remove(TKey key)
-        {
-            TValue value = dict[key];
-            bool ret = dict.Remove(key);
-            KeyValuePairRemoved?.Invoke(this, new EventArg(key, value));
-            return ret;
-        }
-        public void Clear()
-        {
-            dict.Clear();
-            ContentsCleared?.Invoke(this, new EventArg(default, default));
-        }
-        public int Count { get { return dict.Count; } }
-        public TValue this[TKey key]
-        {
-            get { return dict[key]; }
-            set { TValue val = dict[key]; dict[key] = value; ValueChanged?.Invoke(this, new EventArg(key, val)); }
-        }
-        public bool TryGetValue(TKey key, out TValue value) { return dict.TryGetValue(key, out value); }
-        public bool ContainsKey(TKey key) { return dict.ContainsKey(key); }
-        public bool ContainsValue(TValue value) { return dict.ContainsValue(value); }
-        //public Dictionary<TKey, TValue>.KeyCollection Keys { get { return dict.Keys; } }
-        //public Dictionary<TKey, TValue>.ValueCollection Values { get { return dict.Values; } }
-        public Dictionary<TKey, TValue>.Enumerator GetEnumerator() { return dict.GetEnumerator(); }
-        public override string ToString() { return dict.ToString(); }
-    }
     class ExprAnalyzer
     {
+        #region structs & enums
+        public struct Variable
+        {
+            public string Name;
+            public double Value;
+            public Variable(string name, double value)
+            {
+                this.Name = name;
+                this.Value = value;
+            }
+        }
+        private struct variableStr
+        {
+            public string Name;
+            public string Value;
+            public variableStr(string name, string value)
+            {
+                this.Name = name;
+                this.Value = value;
+            }
+        }
+        #endregion
         #region construction
         public ExprAnalyzer()
         {
-            this.expr = String.Empty;
-            this.Variables = new MonDictionary<string, T>();
-            regEvents();
         }
-        public ExprAnalyzer(string expr)
+        public ExprAnalyzer(string expressString, Variable[] variableTable)
         {
-            this.expr = expr;
-            this.Variables = new MonDictionary<string, T>();
-            regEvents();
+            this.express = expressString;
+            this.SetVariableTable(variableTable);
         }
-        public ExprAnalyzer(string expr, MonDictionary<string, T> vars)
+        public ExprAnalyzer(string expressString, string variableTable)
         {
-            this.expr = expr;
-            this.Variables = vars;
-            regEvents();
-        }
-        public ExprAnalyzer(string expr, string vars)
-        {
-            this.expr = expr;
-            this.SetVariableTable(vars);
-            regEvents();
-        }
-        private void regEvents()
-        {
-            this.Variables.ContentsCleared += (object sender, MonDictionary<string, T>.EventArg e) => this.analysed = false;
-            this.Variables.ValueChanged += (object sender, MonDictionary<string, T>.EventArg e) => this.analysed = false;
-            this.Variables.KeyValuePairRemoved += (object sender, MonDictionary<string, T>.EventArg e) => this.analysed = false;
+            this.express = expressString;
+            this.SetVariableTable(variableTable);
         }
         #endregion
         #region fields
-        public readonly MonDictionary<string, T> Variables;
-        private string expr;
-        // private variableStr[] varTable = new variableStr[0];
-        private T value = 0;
+        private string express = "";
+        private variableStr[] varTable = new variableStr[0];
+        private double value = 0;
         private bool analysed = false;
-        private readonly Stack<string> oprStack = new Stack<string>();
-        private readonly Queue<string> varQueue = new Queue<string>();
+        private Stack<string> oprStack = new Stack<string>();
+        private Queue<string> varQueue = new Queue<string>();
         private const string varStr = @"[a-zA-Z_]+\w*";
         private const string numStr = @"([\+\-]?\d+\.?\d*|\.\d+)([eE][\+\-]?\d+)?";
         private const string funStr = @"trunc|tanh|tan|sqrt|sinh|sin|sign|round|rem|pow|min|max|log10|log|ln|floor|exp|cosh|cos|ceil|atan2|atan|asin|acos|abs|sat|if";
@@ -102,10 +58,10 @@ namespace ExpressionAnalyzer
         private Regex varRegex = new Regex(varStr);
         private Regex numRegex = new Regex(numStr);
         private Regex oprRegex = new Regex(oprStr);
-        // private Regex validR = new Regex(@"(" + oprStr + @")|(" + numStr + @")|(" + varStr + @")");
+        private Regex validR = new Regex(@"(" + oprStr + @")|(" + numStr + @")|(" + varStr + @")");
         #endregion
         #region properties
-        public T Value
+        public double Value
         {
             get
             {
@@ -125,11 +81,11 @@ namespace ExpressionAnalyzer
         {
             get
             {
-                return this.expr;
+                return this.express;
             }
             set
             {
-                this.expr = value;
+                this.express = value;
                 this.analysed = false;
             }
         }
@@ -139,7 +95,7 @@ namespace ExpressionAnalyzer
         {
             this.varQueue.Clear();
             this.oprStack.Clear();
-            if (this.expr.Length == 0)
+            if (this.express.Length == 0)
             {
                 this.value = 0.0;
                 this.analysed = true;
@@ -151,9 +107,9 @@ namespace ExpressionAnalyzer
             int idx = 0;
             do
             {
-                while (this.expr[idx] == ' ')
+                while (this.express[idx] == ' ')
                     idx++;
-                if ((M = this.numRegex.Match(this.expr, idx)).Success && M.Index == idx)
+                if ((M = this.numRegex.Match(this.express, idx)).Success && M.Index == idx)
                 {
                     S = M.Value;
                     if (numBefore)
@@ -161,7 +117,7 @@ namespace ExpressionAnalyzer
                     varQueue.Enqueue(S);
                     numBefore = true;
                 }
-                else if ((M = this.oprRegex.Match(this.expr, idx)).Success && M.Index == idx)
+                else if ((M = this.oprRegex.Match(this.express, idx)).Success && M.Index == idx)
                 {
                     S = M.Value;
                     if (S == ",")
@@ -179,7 +135,7 @@ namespace ExpressionAnalyzer
                             numBefore = false;
                     }
                 }
-                else if ((M = this.varRegex.Match(this.expr, idx)).Success && M.Index == idx)
+                else if ((M = this.varRegex.Match(this.express, idx)).Success && M.Index == idx)
                 {
                     S = M.Value;
                     varQueue.Enqueue(this.variableValue(S));
@@ -188,21 +144,19 @@ namespace ExpressionAnalyzer
                 else
                     throw (new Exception("ExprAnalyzer: Invalid Expression"));
                 idx += M.Length;
-            } while (idx < this.expr.Length);
+            } while (idx < this.express.Length);
             while (this.oprStack.Count > 0)
                 this.varQueue.Enqueue(this.oprStack.Pop());
             this.calculate();
         }
         private string variableValue(string name)
         {
-            try
+            foreach (variableStr v in this.varTable)
             {
-                return Variables[name].ToString();
+                if (v.Name == name)
+                    return v.Value;
             }
-            catch (Exception e)
-            {
-                throw new Exception("ExprAnalyzer: Can't find variable:\"" + name + "\" in variable table.", e);
-            }
+            throw (new Exception("ExprAnalyzer: Can't find variable:\"" + name + "\" in variable table."));
         }
         private void dealOpr(string opr)
         {
@@ -271,15 +225,15 @@ namespace ExpressionAnalyzer
         }
         private void calculate()
         {
-            Stack<T> Num = new Stack<T>();
+            Stack<double> Num = new Stack<double>();
             Match M;
             string S;
             while (this.varQueue.Count > 0)
             {
-                T RightParam;
+                double RightParam;
                 S = this.varQueue.Dequeue();
                 if ((M = this.numRegex.Match(S)).Success && M.Index == 0 && M.Length == S.Length)
-                    Num.Push(T.Parse(S));
+                    Num.Push(double.Parse(S));
                 else if ((M = this.oprRegex.Match(S)).Success && M.Index == 0 && M.Length == S.Length)
                 {
                     try
@@ -423,9 +377,9 @@ namespace ExpressionAnalyzer
                                 break;
                             case "sat":
                                 {
-                                    T l = RightParam;
-                                    T h = Num.Pop();
-                                    T v = Num.Pop();
+                                    double l = RightParam;
+                                    double h = Num.Pop();
+                                    double v = Num.Pop();
                                     if (h > l)
                                         v = v < l ? l : v > h ? h : v;
                                     else if (h < l)
@@ -437,17 +391,15 @@ namespace ExpressionAnalyzer
                                 break;
                             case "if":
                                 {
-                                    T fv = RightParam;
-                                    T tv = Num.Pop();
-                                    T b = Num.Pop();
+                                    double fv = RightParam;
+                                    double tv = Num.Pop();
+                                    double b = Num.Pop();
                                     if (b == 0)
                                         Num.Push(fv);
                                     else
                                         Num.Push(tv);
                                 }
                                 break;
-                            default:
-                                throw new InvalidOperationException("ExprAnalyzer: Unsupported function \"" + S + "\".");
                         }
                     }
                     catch (InvalidOperationException)
@@ -464,13 +416,41 @@ namespace ExpressionAnalyzer
         }
         public void SetVariableTable(string variableTable)
         {
-            this.Variables.Clear();
+            List<variableStr> VT = new List<variableStr>();
             Match M = Regex.Match(variableTable, @"(?<Name>" + varStr + @")\s*=\s*(?<Value>" + numStr + @")");
             for (; M.Success; M = M.NextMatch())
+                VT.Add(new variableStr(M.Result("${Name}"), M.Result("${Value}")));
+            this.varTable = new variableStr[VT.Count];
+            VT.CopyTo(this.varTable);
+            this.analysed = false;
+        }
+        public void SetVariableTable(Variable[] variableTable)
+        {
+            this.varTable = new variableStr[variableTable.Length];
+            int i = 0;
+            foreach (Variable v in variableTable)
             {
-                T v = T.Parse(M.Result("${Value}"));
-                this.Variables.Add(M.Result("${Name}"), v);
+                this.varTable[i++] = new variableStr(v.Name, v.Value.ToString());
             }
+            this.analysed = false;
+        }
+        public bool ChangeVarible(string name, double value)
+        {
+            for (int i = 0; i < this.varTable.Length; i++)
+            {
+                if (this.varTable[i].Name == name)
+                {
+                    this.varTable[i].Value = value.ToString();
+                    this.analysed = false;
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void ChangeVarible(int index, double value)
+        {
+            this.varTable[index].Value = value.ToString();
+            this.analysed = false;
         }
         #endregion
     }
