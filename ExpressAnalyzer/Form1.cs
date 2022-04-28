@@ -27,7 +27,7 @@ a=0
 Pi=3.1415926535897932384626
 b=0.996e+3
 c=1.2";
-            this.EA.SetVariableTable(this.txtVars.Text);
+            this.EA.AddVariables(this.txtVars.Text);
         }
 
         private ExprAnalyzer EA;
@@ -46,7 +46,7 @@ c=1.2";
 
         private void txtVars_Leave(object sender, EventArgs e)
         {
-            this.EA.SetVariableTable(this.txtVars.Text);
+            this.EA.AddVariables(this.txtVars.Text);
         }
 
         private void txtExpr_Leave(object sender, EventArgs e)

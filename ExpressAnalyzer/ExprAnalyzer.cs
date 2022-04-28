@@ -6,19 +6,20 @@ using System.Text.RegularExpressions;
 namespace ExpressionAnalyzer
 {
     using T = Double;   // Generic <T> does not support operators, or constraint such as "where T : IArithmatcOperators"
-    public class MonDictionary<TKey, TValue>
+    public class MonDictionary<TKey, TValue> where TKey : notnull
     {
+        #nullable enable
         private Dictionary<TKey, TValue> dict;
         public struct EventArg
         {
-            public TKey Key; public TValue Value;
-            public EventArg(TKey k, TValue v) { this.Key = k; this.Value = v; }
+            public TKey? Key; public TValue? Value;
+            public EventArg(TKey? k, TValue? v) { this.Key = k; this.Value = v; }
         }
         public delegate void EventHandler(object sender, EventArg e);
-        public event EventHandler KeyValuePairAdded;
-        public event EventHandler KeyValuePairRemoved;
-        public event EventHandler ContentsCleared;
-        public event EventHandler ValueChanged;
+        public event EventHandler? KeyValuePairAdded;
+        public event EventHandler? KeyValuePairRemoved;
+        public event EventHandler? ContentsCleared;
+        public event EventHandler? ValueChanged;
         public MonDictionary() { dict = new Dictionary<TKey, TValue>(); }
         public MonDictionary(int capacity) { dict = new Dictionary<TKey, TValue>(capacity); }
         public MonDictionary(Dictionary<TKey, TValue> dict) { this.dict = dict; }
@@ -45,13 +46,13 @@ namespace ExpressionAnalyzer
             get { return dict[key]; }
             set { TValue val = dict[key]; dict[key] = value; ValueChanged?.Invoke(this, new EventArg(key, val)); }
         }
-        public bool TryGetValue(TKey key, out TValue value) { return dict.TryGetValue(key, out value); }
+        public bool TryGetValue(TKey key, out TValue? value) { return dict.TryGetValue(key, out value); }
         public bool ContainsKey(TKey key) { return dict.ContainsKey(key); }
         public bool ContainsValue(TValue value) { return dict.ContainsValue(value); }
         //public Dictionary<TKey, TValue>.KeyCollection Keys { get { return dict.Keys; } }
         //public Dictionary<TKey, TValue>.ValueCollection Values { get { return dict.Values; } }
         public Dictionary<TKey, TValue>.Enumerator GetEnumerator() { return dict.GetEnumerator(); }
-        public override string ToString() { return dict.ToString(); }
+        public override string? ToString() { return dict.ToString(); }
     }
     class ExprAnalyzer
     {
@@ -77,7 +78,8 @@ namespace ExpressionAnalyzer
         public ExprAnalyzer(string expr, string vars)
         {
             this.expr = expr;
-            this.SetVariableTable(vars);
+            this.Variables = new MonDictionary<string, T>();
+            this.AddVariables(vars);
             regEvents();
         }
         private void regEvents()
@@ -462,10 +464,9 @@ namespace ExpressionAnalyzer
             if (Num.Count != 0)
                 throw (new Exception("ExprAnalyzer: Invalid Expression"));
         }
-        public void SetVariableTable(string variableTable)
+        public void AddVariables(string variableList)
         {
-            this.Variables.Clear();
-            Match M = Regex.Match(variableTable, @"(?<Name>" + varStr + @")\s*=\s*(?<Value>" + numStr + @")");
+            Match M = Regex.Match(variableList, @"(?<Name>" + varStr + @")\s*=\s*(?<Value>" + numStr + @")");
             for (; M.Success; M = M.NextMatch())
             {
                 T v = T.Parse(M.Result("${Value}"));
