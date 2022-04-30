@@ -46,6 +46,7 @@ c=1.2";
 
         private void txtVars_Leave(object sender, EventArgs e)
         {
+            this.EA.Variables.Clear();
             this.EA.AddVariables(this.txtVars.Text);
         }
 
