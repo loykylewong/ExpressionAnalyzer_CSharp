@@ -342,3 +342,5 @@ ASALocalRun/
 healthchecksdb
 
 .DS_Store
+.*.swp
+
