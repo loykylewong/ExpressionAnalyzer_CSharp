@@ -203,7 +203,7 @@ namespace ExpressionAnalyzer
             }
             catch (Exception e)
             {
-                throw new Exception("ExprAnalyzer: Can't find variable:\"" + name + "\" in variable table.", e);
+                throw new Exception("ExprAnalyzer: \"" + name + "\" is not a supported function or a defined variable.", e);
             }
         }
         private void dealOpr(string opr)
@@ -454,7 +454,7 @@ namespace ExpressionAnalyzer
                     }
                     catch (InvalidOperationException)
                     {
-                        throw (new Exception("ExprAnalyzer: Invalid Expression."));
+                        throw (new Exception("ExprAnalyzer: Lack of operand or bracket."));
                     }
                 }
                 else
@@ -469,8 +469,12 @@ namespace ExpressionAnalyzer
             Match M = Regex.Match(variableList, @"(?<Name>" + varStr + @")\s*=\s*(?<Value>" + numStr + @")");
             for (; M.Success; M = M.NextMatch())
             {
+                string n = M.Result("${Name}");
                 T v = T.Parse(M.Result("${Value}"));
-                this.Variables.Add(M.Result("${Name}"), v);
+                if(this.Variables.ContainsKey(n))
+                    this.Variables[n] = v;
+                else
+                    this.Variables.Add(M.Result("${Name}"), v);
             }
         }
         public void Invalidate()
